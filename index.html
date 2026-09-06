@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ff4eb2">
+  <meta name="description" content="スマホで営業予定を入力し、SNS用の営業カレンダー画像を作成できます。">
+  <title>un bake 営業カレンダー</title>
+  <link rel="stylesheet" href="./style.css?v=6">
+</head>
+<body class="login-locked">
+  <div class="login-overlay" id="loginOverlay">
+    <form class="login-box" id="loginForm">
+      <img class="login-logo" src="./assets/unbake-logo-clean.png" alt="un bake">
+      <p class="login-eyebrow">UN BAKE SCHEDULE</p>
+      <h2>営業カレンダー</h2>
+      <p class="login-guide">パスワードを入力してください</p>
+      <label class="sr-only" for="loginPassword">パスワード</label>
+      <input id="loginPassword" type="password" inputmode="numeric" autocomplete="current-password" aria-describedby="loginError" autofocus>
+      <button class="login-button" type="submit">ログイン</button>
+      <p class="login-error" id="loginError" role="alert" aria-live="polite"></p>
+    </form>
+  </div>
+
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <img src="./assets/unbake-logo-clean.png" alt="un bake">
+        <div>
+          <p class="eyebrow">CALENDAR MAKER</p>
+          <h1>営業カレンダー</h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="header-settings-button" id="passcodeButton" type="button">パスコード変更</button>
+        <button class="icon-button" id="helpButton" aria-label="使い方">?</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="month-card" aria-label="編集する月">
+        <button class="month-arrow" id="prevMonth" aria-label="前の月">‹</button>
+        <button class="month-title" id="monthPickerButton" aria-label="月を選ぶ">
+          <strong id="monthTitle">2026年9月</strong>
+          <span id="monthEnglish">September</span>
+        </button>
+        <input id="monthInput" type="month" aria-label="年月" hidden>
+        <button class="month-arrow" id="nextMonth" aria-label="次の月">›</button>
+      </section>
+
+      <section class="editor-card">
+        <div class="editor-heading">
+          <div>
+            <p class="eyebrow">TAP A DATE</p>
+            <h2>日付をタップして予定を入力</h2>
+          </div>
+          <button class="text-button" id="todayButton">今月へ</button>
+        </div>
+
+        <div class="weekdays" aria-hidden="true">
+          <span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="sat">土</span><span class="sun">日</span>
+        </div>
+        <div class="calendar" id="calendar" role="grid" aria-label="営業予定カレンダー"></div>
+
+        <button class="add-button" id="bulkAddButton">
+          <span>＋</span> 複数日に同じ予定を追加
+        </button>
+      </section>
+
+      <section class="notice-card">
+        <label for="monthlyNotice">カレンダー下のお知らせ</label>
+        <textarea id="monthlyNotice" rows="2" placeholder="例：7・8・9月はマフィンのお店販売はおやすみです"></textarea>
+      </section>
+
+      <section class="color-card" aria-labelledby="imageColorTitle">
+        <div class="color-card-heading">
+          <div>
+            <p class="eyebrow">IMAGE COLORS</p>
+            <h2 id="imageColorTitle">カレンダー背景色</h2>
+          </div>
+          <span>月ごとに保存</span>
+        </div>
+        <div class="color-grid">
+          <label for="posterBackgroundColor">
+            <span><b>背景色</b><output id="posterBackgroundValue">#efeeec</output></span>
+            <input id="posterBackgroundColor" type="color" value="#efeeec" aria-label="保存画像の背景色">
+          </label>
+          <label for="monthAccentColor">
+            <span><b>月数字の色</b><output id="monthAccentValue">#ff4eb2</output></span>
+            <input id="monthAccentColor" type="color" value="#ff4eb2" aria-label="月を表す数字の色">
+          </label>
+        </div>
+      </section>
+
+      <section class="legend" aria-label="予定の種類">
+        <div><img src="./assets/muffin.png" alt="">マフィン</div>
+        <div><img src="./assets/dagashiya-hq.png" alt="">駄菓子</div>
+        <div><img src="./assets/unbake-logo-clean.png" alt="">お店</div>
+        <div><span class="legend-dot event-dot"></span>イベント</div>
+        <div><span class="legend-dot closed-dot"></span>お休み</div>
+      </section>
+    </main>
+
+    <footer class="action-bar">
+      <div class="save-state"><span></span>このスマホに自動保存</div>
+      <button class="primary-button" id="previewButton">画像を確認・保存</button>
+    </footer>
+  </div>
+
+  <dialog id="eventDialog" class="sheet-dialog">
+    <form method="dialog" class="sheet" id="eventForm">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="sheet-head">
+        <div>
+          <p class="eyebrow" id="sheetEyebrow">SCHEDULE</p>
+          <h2 id="sheetTitle">予定を追加</h2>
+        </div>
+        <button class="close-button" value="cancel" aria-label="閉じる">×</button>
+      </div>
+
+      <div id="dateSelectArea">
+        <label class="field-label">予定を入れる日 <small>複数選択できます</small></label>
+        <div class="date-pills" id="datePills"></div>
+      </div>
+
+      <fieldset class="type-fieldset">
+        <legend class="field-label">予定の種類</legend>
+        <div class="type-grid" id="typeGrid">
+          <label><input type="radio" name="type" value="muffin" checked><span><img src="./assets/muffin.png" alt="">マフィン</span></label>
+          <label><input type="radio" name="type" value="dagashi"><span><img src="./assets/dagashiya-hq.png" alt="">駄菓子</span></label>
+          <label><input type="radio" name="type" value="shop"><span><img src="./assets/unbake-logo-clean.png" alt="">お店</span></label>
+          <label><input type="radio" name="type" value="event"><span><b class="type-icon">★</b>イベント</span></label>
+          <label><input type="radio" name="type" value="closed"><span><b class="type-icon">休</b>お休み</span></label>
+          <label><input type="radio" name="type" value="other"><span><b class="type-icon">•</b>その他</span></label>
+          <div id="customTypeOptions" class="custom-type-options"></div>
+          <button class="add-type-button" id="addTypeButton" type="button"><b>＋</b>種類を追加</button>
+        </div>
+      </fieldset>
+
+      <div class="form-grid">
+        <label class="form-field full">表示する名前
+          <input id="eventName" maxlength="24" placeholder="例：スーパー sanshi">
+        </label>
+        <label class="form-field full">場所
+          <input id="eventPlace" maxlength="24" list="placeList" placeholder="例：河芸">
+          <datalist id="placeList">
+            <option value="河芸"><option value="川越"><option value="生桑"><option value="エコー"><option value="桑名"><option value="大矢知"><option value="明和"><option value="菰野"><option value="ハンター">
+          </datalist>
+        </label>
+        <label class="form-field">開始
+          <input id="startTime" type="time" value="11:00">
+        </label>
+        <label class="form-field">終了
+          <input id="endTime" type="time" value="15:00">
+        </label>
+        <label class="form-field full">ひとこと <small>改行できます</small>
+          <textarea id="eventNote" rows="2" maxlength="60" placeholder="例：焼き菓子も販売します"></textarea>
+        </label>
+      </div>
+
+      <div class="existing-events" id="existingEvents"></div>
+      <div class="sheet-actions">
+        <button type="button" class="danger-button" id="deleteButton" hidden>この予定を削除</button>
+        <button type="submit" class="primary-button" id="saveEventButton">予定を保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="customTypeDialog" class="message-dialog custom-type-dialog">
+    <form id="customTypeForm">
+      <button class="close-button" id="closeCustomType" type="button" aria-label="閉じる">×</button>
+      <p class="eyebrow">NEW SCHEDULE TYPE</p>
+      <h2>予定の種類を追加</h2>
+      <label class="custom-type-field" for="customTypeName">予定種類名
+        <input id="customTypeName" maxlength="18" placeholder="例：マルシェ" required>
+      </label>
+      <label class="custom-color-field" for="customTypeColor">
+        <span>文字色</span>
+        <input id="customTypeColor" type="color" value="#e33c52" aria-label="文字色">
+      </label>
+      <label class="custom-icon-field" for="customTypeIcon">
+        <span><b>アイコン画像</b><small>なくても追加できます</small></span>
+        <input id="customTypeIcon" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+      </label>
+      <div class="custom-icon-preview" id="customIconPreview" hidden><img id="customIconPreviewImage" alt="選択したアイコン"></div>
+      <p class="custom-type-error" id="customTypeError" role="alert" aria-live="polite"></p>
+      <button class="primary-button custom-type-save" type="submit">この種類を追加</button>
+    </form>
+  </dialog>
+
+  <dialog id="passcodeDialog" class="message-dialog passcode-dialog">
+    <form id="passcodeForm">
+      <button class="close-button" id="closePasscode" type="button" aria-label="閉じる">×</button>
+      <p class="eyebrow">LOGIN SETTINGS</p>
+      <h2>パスコード変更</h2>
+      <label for="currentPasscode">現在のパスコード
+        <input id="currentPasscode" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" required>
+      </label>
+      <label for="newPasscode">新しいパスコード
+        <input id="newPasscode" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="4〜8桁の数字" required>
+      </label>
+      <label for="confirmPasscode">新しいパスコード（確認）
+        <input id="confirmPasscode" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" required>
+      </label>
+      <p class="passcode-message" id="passcodeMessage" role="alert" aria-live="polite"></p>
+      <button class="primary-button passcode-save" type="submit">変更する</button>
+    </form>
+  </dialog>
+
+  <dialog id="previewDialog" class="preview-dialog">
+    <div class="preview-panel">
+      <div class="sheet-head">
+        <div><p class="eyebrow">PREVIEW</p><h2>画像の仕上がり</h2></div>
+        <button class="close-button" id="closePreview" aria-label="閉じる">×</button>
+      </div>
+      <div class="preview-frame"><canvas id="exportCanvas" width="1440" height="1920"></canvas></div>
+      <p class="preview-note">保存サイズ：1440 × 1920 px</p>
+      <div class="preview-actions">
+        <button class="secondary-button" id="shareButton">共有する</button>
+        <button class="primary-button" id="downloadButton">画像を保存</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="helpDialog" class="message-dialog">
+    <div>
+      <button class="close-button" id="closeHelp" aria-label="閉じる">×</button>
+      <img src="./assets/muffin.png" alt="" class="help-muffin">
+      <h2>使い方は3ステップ</h2>
+      <ol><li>月を選ぶ</li><li>日付をタップして予定を入れる</li><li>「画像を確認・保存」を押す</li></ol>
+      <p>入力内容はこのスマホのブラウザに自動で残ります。</p>
+      <button class="primary-button" id="helpOkay">わかりました</button>
+    </div>
+  </dialog>
+
+  <script src="./app.js?v=19"></script>
+</body>
+</html>
