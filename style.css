@@ -140,6 +140,11 @@ dialog::backdrop { background: rgba(24, 21, 28, .56); backdrop-filter: blur(3px)
 .type-grid img { width: 31px; height: 31px; object-fit: contain; }
 .type-icon { font-size: 1.05rem !important; font-weight: 950 !important; }
 .custom-type-options { display: contents; }
+.custom-type-option { position: relative; min-width: 0; }
+.custom-type-option label { display: block; }
+.custom-type-option label > span { min-height: 86px; padding: 5px 4px 29px; }
+.delete-custom-type { position: absolute; z-index: 2; right: 6px; bottom: 5px; left: 6px; min-height: 23px; border: 1px solid #ef9eaa; border-radius: 8px; background: #fff5f6; color: #cf3049; font-size: .7rem; font-weight: 900; line-height: 1; cursor: pointer; }
+.delete-custom-type:active { transform: translateY(1px); background: #ffe8ec; }
 .add-type-button { display: flex; min-height: 63px; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1.5px dashed #aaa4ac; border-radius: 13px; background: #faf9fb; color: var(--pink-dark); font-size: .78rem; font-weight: 900; cursor: pointer; }
 .add-type-button b { font-size: 1.35rem; line-height: 1; }
 .event-chip.custom-event-chip img { display: block; width: 30px; height: 30px; margin: 1px auto; object-fit: contain; }
