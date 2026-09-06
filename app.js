@@ -109,15 +109,53 @@
   function isCustomType(type) { return String(type).startsWith('custom-'); }
   function typeMeta(type) { return TYPE_META[type] || customTypes().find(item => item.id === type) || TYPE_META.other; }
 
+  function countEventsWithType(type) {
+    let count = 0;
+    Object.values(state.data.months).forEach(month => {
+      Object.values(month.days || {}).forEach(events => {
+        (events || []).forEach(event => { if (event.type === type) count += 1; });
+      });
+    });
+    return count;
+  }
+
+  function deleteCustomType(item) {
+    const usedCount = countEventsWithType(item.id);
+    const usageMessage = usedCount
+      ? `\n\nこの種類を使っている予定${usedCount}件は、内容を残したまま「その他」に変更されます。`
+      : '';
+    if (!window.confirm(`「${item.title}」を削除しますか？${usageMessage}`)) return;
+
+    Object.values(state.data.months).forEach(month => {
+      Object.values(month.days || {}).forEach(events => {
+        (events || []).forEach(event => { if (event.type === item.id) event.type = 'other'; });
+      });
+    });
+    state.data.customTypes = customTypes().filter(type => type.id !== item.id);
+    const selectedValue = document.querySelector('input[name="type"]:checked')?.value;
+    persist();
+    renderCustomTypeOptions();
+    if (selectedValue === item.id) setType('other', false);
+    else if (selectedValue) {
+      const restored = document.querySelector(`input[name="type"][value="${selectedValue}"]`);
+      if (restored) restored.checked = true;
+    }
+    render();
+  }
+
   function renderCustomTypeOptions() {
     els.customTypeOptions.replaceChildren();
     customTypes().forEach(item => {
+      const wrapper = document.createElement('div'); wrapper.className = 'custom-type-option';
       const label = document.createElement('label');
       const input = document.createElement('input'); input.type = 'radio'; input.name = 'type'; input.value = item.id;
       const span = document.createElement('span'); span.style.color = item.color;
       if (item.image) { const img = document.createElement('img'); img.src = item.image; img.alt = ''; span.append(img); }
       span.append(document.createTextNode(item.title));
-      label.append(input, span); els.customTypeOptions.append(label);
+      const deleteButton = document.createElement('button'); deleteButton.type = 'button'; deleteButton.className = 'delete-custom-type';
+      deleteButton.textContent = '削除'; deleteButton.setAttribute('aria-label', `${item.title}を削除`);
+      deleteButton.addEventListener('click', () => deleteCustomType(item));
+      label.append(input, span); wrapper.append(label, deleteButton); els.customTypeOptions.append(wrapper);
     });
   }
 
