@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#ff4eb2">
+  <meta name="theme-color" content="#6cc4c8">
   <meta name="description" content="スマホで営業予定を入力し、SNS用の営業カレンダー画像を作成できます。">
   <title>un bake 営業カレンダー</title>
-  <link rel="stylesheet" href="./style.css?v=7">
+  <link rel="stylesheet" href="./style.css?v=8">
 </head>
 <body class="login-locked">
   <div class="login-overlay" id="loginOverlay">
@@ -141,6 +141,14 @@
         <label class="form-field full">表示する名前
           <input id="eventName" maxlength="24" placeholder="例：スーパー sanshi">
         </label>
+        <label class="form-field full">予定名の文字サイズ
+          <select id="titleSize">
+            <option value="auto">自動（おすすめ）</option>
+            <option value="small">小さめ</option>
+            <option value="normal">標準</option>
+            <option value="large">大きめ</option>
+          </select>
+        </label>
         <label class="form-field full">場所
           <input id="eventPlace" maxlength="24" list="placeList" placeholder="例：河芸">
           <datalist id="placeList">
@@ -233,6 +241,6 @@
     </div>
   </dialog>
 
-  <script src="./app.js?v=20"></script>
+  <script src="./app.js?v=21"></script>
 </body>
 </html>
