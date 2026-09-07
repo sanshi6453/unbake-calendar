@@ -42,6 +42,13 @@
     events.forEach(event=>{
       if(event.name==='3×3 united tsv ラウンド') { event.name='3x3 united tsu ラウンド'; changed=true; }
     });
+    Object.values(data?.months || {}).forEach(month => {
+      Object.values(month.days || {}).forEach(dayEvents => {
+        (dayEvents || []).forEach(event => {
+          if (event.name === '暮音祭' && !event.titleSize) { event.titleSize = 'large'; changed = true; }
+        });
+      });
+    });
     if(changed) localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
     return data;
   }
@@ -96,7 +103,7 @@
     calendar: $('calendar'), monthTitle: $('monthTitle'), monthEnglish: $('monthEnglish'), monthInput: $('monthInput'), notice: $('monthlyNotice'),
     backgroundColor: $('posterBackgroundColor'), backgroundValue: $('posterBackgroundValue'), monthAccentColor: $('monthAccentColor'), monthAccentValue: $('monthAccentValue'),
     eventDialog: $('eventDialog'), eventForm: $('eventForm'), datePills: $('datePills'), dateSelectArea: $('dateSelectArea'), sheetTitle: $('sheetTitle'),
-    eventName: $('eventName'), eventPlace: $('eventPlace'), startTime: $('startTime'), endTime: $('endTime'), eventNote: $('eventNote'),
+    eventName: $('eventName'), titleSize: $('titleSize'), eventPlace: $('eventPlace'), startTime: $('startTime'), endTime: $('endTime'), eventNote: $('eventNote'),
     existingEvents: $('existingEvents'), deleteButton: $('deleteButton'), previewDialog: $('previewDialog'), canvas: $('exportCanvas'),
     typeGrid: $('typeGrid'), customTypeOptions: $('customTypeOptions'), customTypeDialog: $('customTypeDialog'), customTypeForm: $('customTypeForm'),
     customTypeName: $('customTypeName'), customTypeColor: $('customTypeColor'), customTypeIcon: $('customTypeIcon'),
@@ -204,7 +211,7 @@
 
   function makeEventChip(event, count) {
     const meta = typeMeta(event.type);
-    const chip = document.createElement('span'); chip.className = `event-chip type-${event.type}${isCustomType(event.type) ? ' custom-event-chip' : ''}`; chip.style.setProperty('--chip-color',meta.color);
+    const chip = document.createElement('span'); chip.className = `event-chip type-${event.type}${isCustomType(event.type) ? ' custom-event-chip' : ''} title-size-${event.titleSize || 'auto'}`; chip.style.setProperty('--chip-color',meta.color);
     if (meta.image) { const img = document.createElement('img'); img.src = meta.image; img.alt = ''; chip.append(img); }
     const name = event.name || meta.title;
     if (event.type === 'muffin' && /sanshi/i.test(name)) {
@@ -249,7 +256,7 @@
     els.eventForm.reset();
     els.startTime.value = '11:00'; els.endTime.value = '15:00';
     if (existing) {
-      els.eventName.value=existing.name||''; els.eventPlace.value=existing.place||''; els.startTime.value=existing.start||''; els.endTime.value=existing.end||''; els.eventNote.value=existing.note||'';
+      els.eventName.value=existing.name||''; els.titleSize.value=existing.titleSize||'auto'; els.eventPlace.value=existing.place||''; els.startTime.value=existing.start||''; els.endTime.value=existing.end||''; els.eventNote.value=existing.note||'';
       setType(existing.type, false);
     } else setType('muffin', true);
     renderDatePills(); renderExisting(day);
@@ -275,7 +282,7 @@
   function selectedType() { return document.querySelector('input[name="type"]:checked').value; }
   function buildFormEvent() {
     const type = selectedType(), meta = typeMeta(type);
-    return { id: uid(), type, name: els.eventName.value.trim() || meta.title, place: els.eventPlace.value.trim(), start: els.startTime.value, end: els.endTime.value, note: els.eventNote.value.trim() };
+    return { id: uid(), type, name: els.eventName.value.trim() || meta.title, titleSize: els.titleSize.value, place: els.eventPlace.value.trim(), start: els.startTime.value, end: els.endTime.value, note: els.eventNote.value.trim() };
   }
 
   els.eventForm.addEventListener('submit', (e) => {
@@ -383,6 +390,10 @@
     ctx.drawImage(img,x+(w-drawW)/2,y+(h-drawH)/2,drawW,drawH);
   }
   function fitText(ctx,text,maxWidth,start,min=15) { let size=start; do { ctx.font=ctx.font.replace(/\d+(?:\.\d+)?px/,`${size}px`); if(ctx.measureText(text).width<=maxWidth) break; size-=1; } while(size>min); return size; }
+  function eventTitleScale(event) {
+    return ({ small: .82, normal: 1, large: 1.38 })[event.titleSize] || 1;
+  }
+  function eventTitleSize(event, base) { return Math.round(base * eventTitleScale(event)); }
   function wrapLines(ctx,text,maxWidth,maxLines=2) {
     const chars=[...String(text||'')], lines=[]; let line='';
     for(const ch of chars){ const test=line+ch; if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=ch;if(lines.length===maxLines-1)break;}else line=test; }
@@ -503,7 +514,8 @@
 
     if(secondary){
       ctx.strokeStyle=meta.color;ctx.globalAlpha=.55;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+5,y);ctx.lineTo(x+w-5,y);ctx.stroke();ctx.globalAlpha=1;
-      ctx.fillStyle=meta.color;ctx.font='800 11px "Yu Gothic",sans-serif';fitText(ctx,event.name||meta.title,w-8,11,9);ctx.fillText(event.name||meta.title,x+w/2,y+14);
+      const secondaryTitleSize=eventTitleSize(event,11);
+      ctx.fillStyle=meta.color;ctx.font=`800 ${secondaryTitleSize}px "Yu Gothic",sans-serif`;fitText(ctx,event.name||meta.title,w-8,secondaryTitleSize,8);ctx.fillText(event.name||meta.title,x+w/2,y+14);
       const detail=[event.place?`(${event.place})`:'',event.start||event.end?`${event.start||''}${event.end?'〜'+event.end:''}`:''].filter(Boolean).join(' ');
       if(detail){ctx.font='400 10px STHupo,sans-serif';fitText(ctx,detail,w-8,10,8);ctx.fillText(detail,x+w/2,y+h-4);}
       ctx.restore();return;
@@ -543,8 +555,9 @@
       const title=event.name||meta.title, icon=images.customImages[event.type];
       let lineY=y+(compact?48:64);
       if(icon){const size=Math.min(compact?32:48,h-(compact?42:62),w-18);drawImageContain(ctx,icon,x+(w-size)/2,y+5,size,size);lineY=y+size+(compact?18:26);}
-      ctx.fillStyle=meta.color;ctx.font=`900 ${compact?13:17}px "Yu Gothic",sans-serif`;fitText(ctx,title,w-10,compact?13:17,10);ctx.fillText(title,x+w/2,lineY);
-      lineY+=compact?15:21;
+      const customTitleSize=eventTitleSize(event,compact?13:17);
+      ctx.fillStyle=meta.color;ctx.font=`900 ${customTitleSize}px "Yu Gothic",sans-serif`;fitText(ctx,title,w-10,customTitleSize,9);ctx.fillText(title,x+w/2,lineY);
+      lineY+=customTitleSize+4;
       if(event.place){ctx.fillStyle='#242329';ctx.font='700 13px "Yu Gothic",sans-serif';fitText(ctx,`(${event.place})`,w-8,13,9);ctx.fillText(`(${event.place})`,x+w/2,lineY);lineY+=16;}
       if(event.start||event.end){ctx.fillStyle=meta.color;ctx.font='400 15px STHupo,sans-serif';fitText(ctx,`${event.start||''}${event.end?'〜'+event.end:''}`,w-8,15,10);ctx.fillText(`${event.start||''}${event.end?'〜'+event.end:''}`,x+w/2,Math.min(y+h-4,lineY));}
     } else {
@@ -553,12 +566,14 @@
       const is3x3=/^3[x×]3\s+united\s+tsu\s+ラウンド$/i.test(title.trim());
       let lineY;
       if(is3x3&&!compact){
-        ctx.font='400 22px STHupo,sans-serif';ctx.fillText('3x3',x+w/2,y+54);
-        ctx.font='400 17px STHupo,sans-serif';fitText(ctx,'united tsu',w-12,17,14);ctx.fillText('united tsu',x+w/2,y+73);
-        ctx.font='900 14px "Yu Gothic",sans-serif';ctx.fillText('ラウンド',x+w/2,y+91);
+        const specialScale=Math.min(eventTitleScale(event),1.16);
+        const firstSize=Math.round(22*specialScale), secondSize=Math.round(17*specialScale), thirdSize=Math.round(14*specialScale);
+        ctx.font=`400 ${firstSize}px STHupo,sans-serif`;ctx.fillText('3x3',x+w/2,y+54);
+        ctx.font=`400 ${secondSize}px STHupo,sans-serif`;fitText(ctx,'united tsu',w-12,secondSize,14);ctx.fillText('united tsu',x+w/2,y+74);
+        ctx.font=`900 ${thirdSize}px "Yu Gothic",sans-serif`;ctx.fillText('ラウンド',x+w/2,y+94);
         lineY=y+108;
       } else {
-        const fitted=fitMixedTitleLines(ctx,title,w-10,3,compact?13:16,10);
+        const fitted=fitMixedTitleLines(ctx,title,w-10,3,eventTitleSize(event,compact?13:16),9);
         const lines=fitted.lines,lineGap=fitted.size+4;
         lineY=y+(lines.length>1?52:66);
         lines.forEach((line,i)=>drawMixedTitleCentered(ctx,line,x+w/2,lineY+i*lineGap,fitted.size));
