@@ -6,14 +6,17 @@
   <meta name="theme-color" content="#6cc4c8">
   <meta name="description" content="スマホで営業予定を入力し、SNS用の営業カレンダー画像を作成できます。">
   <title>un bake 営業カレンダー</title>
-  <link rel="stylesheet" href="./style.css?v=8">
+  <link rel="stylesheet" href="./style.css?v=9">
 </head>
 <body class="login-locked">
   <div class="login-overlay" id="loginOverlay">
     <form class="login-box" id="loginForm">
-      <img class="login-logo" src="./assets/unbake-logo-clean.png" alt="un bake">
-      <p class="login-eyebrow">UN BAKE SCHEDULE</p>
-      <h2>営業カレンダー</h2>
+      <div class="login-title">
+        <svg class="login-lock" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 10V7a5 5 0 0 1 10 0v3h1.5A1.5 1.5 0 0 1 20 11.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20.5v-9A1.5 1.5 0 0 1 5.5 10H7Zm2 0h6V7a3 3 0 0 0-6 0v3Zm3 4a1.5 1.5 0 0 0-1 2.62V19h2v-2.38A1.5 1.5 0 0 0 12 14Z"/>
+        </svg>
+        <h2>営業カレンダー</h2>
+      </div>
       <p class="login-guide">パスワードを入力してください</p>
       <label class="sr-only" for="loginPassword">パスワード</label>
       <input id="loginPassword" type="password" inputmode="numeric" autocomplete="current-password" aria-describedby="loginError" autofocus>
